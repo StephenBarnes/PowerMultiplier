@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.1.0
+Date: 04. 12. 2024
+  Features:
+    - Multipliers now affect roboports, robots, and roboport equipment. Robot range is not affected, because increased battery and faster recharge cancels out increased power consumption.
+---------------------------------------------------------------------------------------------------
 Version: 1.0.0
 Date: 04. 12. 2024
   Features:

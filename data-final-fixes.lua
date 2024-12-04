@@ -33,6 +33,14 @@ local ENERGY_KEYS = {
 	["constant-combinator"] = {}, -- Still including here for the heat energy.
 	["loader"] = {"energy_per_item"},
 	["loader-1x1"] = {"energy_per_item"},
+	["roboport"] = {"energy_usage", "recharge_minimum", "charging_energy"},
+	["logistic-robot"] = {"max_energy", "energy_per_move", "energy_per_tick"},
+	["construction-robot"] = {"max_energy", "energy_per_move", "energy_per_tick"},
+	["roboport-equipment"] = {"charging_energy", "spawn_minimum", "power"},
+}
+local ALWAYS_ELECTRIC = { -- Set of things that are always electric, but don't have an electric energy source specified.
+	["logistic-robot"] = true,
+	["construction-robot"] = true,
 }
 
 local function multWithUnits(s, x)
@@ -58,6 +66,7 @@ end
 
 local function getEntityMult(entity)
 	-- Gets the multiplier applicable to an entity, by checking its energy source type (electrical, burner, nutrient).
+	if ALWAYS_ELECTRIC[entity.type] then return electricalMult end
 	local energySource = entity.energy_source
 	if energySource == nil then return end
 	if energySource.type == "electric" then
@@ -93,10 +102,9 @@ local function adjustEnergyFields(entity, energyKeys)
 			entity[key] = multWithUnits(entity[key], mult)
 		end
 	end
-	if entity.energy_source.type == "electric" then
+	if entity.energy_source and entity.energy_source.type == "electric" then
 		--log("Adjusting electric energy source of " .. entity.name .. " with drain " .. (entity.energy_source.drain or "nil"))
 		adjustElectricEnergySource(entity.energy_source, mult)
-		--log("drain is now " .. (entity.energy_source.drain or "nil"))
 	end
 end
 
