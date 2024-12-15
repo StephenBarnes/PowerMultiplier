@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.2.0
+Date: 15. 12. 2024
+  Features:
+    - Added a setting to blacklist entity IDs so they aren't affected by the multiplier.
+  Bugfixes:
+    - Heat multipliers now affect pipes, belts, underground pipes/belts, splitters, and storage tanks.
+    - For entities that don't need heating, this mod will no longer change their heating energy from zero to zero (to avoid spam in prototype change history).
+---------------------------------------------------------------------------------------------------
 Version: 1.1.0
 Date: 04. 12. 2024
   Features:

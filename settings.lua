@@ -45,4 +45,12 @@ data:extend({
         default_value = 1.0,
         minimum_value = 0.0,
     },
+    {
+        order = nextOrder(),
+        type = "string-setting",
+        name = "PowerMultiplier-blacklist",
+        setting_type = "startup",
+        default_value = "",
+        allow_blank = true,
+    },
 })

@@ -3,6 +3,22 @@ local burnerMult = settings.startup["PowerMultiplier-burner"].value
 local nutrientMult = settings.startup["PowerMultiplier-nutrient"].value
 local heatingMult = settings.startup["PowerMultiplier-heating"].value
 local solarMult = settings.startup["PowerMultiplier-solar"].value
+---@cast electricalMult number
+---@cast burnerMult number
+---@cast nutrientMult number
+---@cast heatingMult number
+---@cast solarMult number
+
+local blacklistString = settings.startup["PowerMultiplier-blacklist"].value
+---@cast blacklistString string
+-- Split by comma
+---@type table<string, boolean>
+local blacklistIds = {}
+for blacklistStringPart in string.gmatch(blacklistString, "([^,]+)") do
+	-- remove whitespace
+	blacklistStringPart = blacklistStringPart:gsub("%s", "")
+	blacklistIds[blacklistStringPart] = true
+end
 
 local ENERGY_KEYS = {
 	-- Maps entity type to a list of fields that should be multiplied by their energy source's multiplier.
@@ -37,16 +53,29 @@ local ENERGY_KEYS = {
 	["logistic-robot"] = {"max_energy", "energy_per_move", "energy_per_tick"},
 	["construction-robot"] = {"max_energy", "energy_per_move", "energy_per_tick"},
 	["roboport-equipment"] = {"charging_energy", "spawn_minimum", "power"},
+
+	-- Stuff included here only for heating:
+	["pipe"] = {},
+	["pipe-to-ground"] = {},
+	["transport-belt"] = {},
+	["underground-belt"] = {},
+	["splitter"] = {},
+	["storage-tank"] = {},
 }
-local ALWAYS_ELECTRIC = { -- Set of things that are always electric, but don't have an electric energy source specified.
+local ALWAYS_ELECTRIC = { -- Set of things that use electric power sources (so electric multiplier should apply), but don't have an electric energy source specified.
 	["logistic-robot"] = true,
 	["construction-robot"] = true,
 }
 
+---@param s nil | string
+---@param x number
+---@return nil | string
 local function multWithUnits(s, x)
 	-- Given a string `s` with a number and units, eg "100kW" or "50J" or "0.5kW", multiplies only the number part by the given real number `x`.
+	-- Returns nil if the number is 0, so we can avoid changing 0 to 0 and thereby spamming the prototype change history.
 	if s == nil then return nil end
 	local num, units = s:match("^([%d.]+)([a-zA-Z]*)$")
+	if num == 0 then return nil end
 	return num * x .. units
 end
 
@@ -119,16 +148,20 @@ end
 local function adjustAllEnergyFields()
 	-- Adjust all energy usage fields of all applicable entities.
 	for typeName, energyKeys in pairs(ENERGY_KEYS) do
-		for _, entity in pairs(data.raw[typeName]) do
-			--log("Adjusting " .. typeName .. " " .. entity.name)
-			adjustEnergyFields(entity, energyKeys)
+		for entityName, entity in pairs(data.raw[typeName]) do
+			if not blacklistIds[entityName] then
+				--log("Adjusting " .. typeName .. " " .. entity.name)
+				adjustEnergyFields(entity, energyKeys)
+			end
 		end
 	end
 	-- Adjust electric ammo of turrets.
 	for _, typeName in pairs({"electric-turret", "ammo-turret", "fluid-turret"}) do
-		for _, entity in pairs(data.raw[typeName]) do
-			--log("Adjusting turret ammo: " .. typeName .. " " .. entity.name)
-			adjustTurretElectricAmmo(entity)
+		for entityName, entity in pairs(data.raw[typeName]) do
+			if not blacklistIds[entityName] then
+				--log("Adjusting turret ammo: " .. typeName .. " " .. entity.name)
+				adjustTurretElectricAmmo(entity)
+			end
 		end
 	end
 end
@@ -138,17 +171,24 @@ end
 
 local function adjustHeatingEnergy(entity)
 	-- For the given entity, adjusts heating energy (needed on Aquilo).
-	if heatingMult == 1 then return end
-	if entity.heating_energy then entity.heating_energy = multWithUnits(entity.heating_energy, heatingMult) end
+	if entity.heating_energy then
+		local newHeatingEnergy = multWithUnits(entity.heating_energy, heatingMult)
+		if newHeatingEnergy ~= nil then
+			-- Avoid setting it if it's nil. This ensures that entities that are self-heating don't get this mod in the prototype change history.
+			entity.heating_energy = newHeatingEnergy
+		end
+	end
 end
 
 local function adjustAllHeatingFields()
 	-- Adjust energy required to heat all entities.
 	if heatingMult == 1 then return end
 	for typeName, _ in pairs(ENERGY_KEYS) do
-		for _, entity in pairs(data.raw[typeName]) do
-			--log("Adjusting heating energy of " .. entity.name)
-			adjustHeatingEnergy(entity)
+		for entityName, entity in pairs(data.raw[typeName]) do
+			if not blacklistIds[entityName] then
+				--log("Adjusting heating energy of " .. entity.name)
+				adjustHeatingEnergy(entity)
+			end
 		end
 	end
 end
@@ -157,9 +197,16 @@ end
 
 local function adjustAllSolarPanels()
 	if solarMult == nil or solarMult == 1 then return end
-	for _, entity in pairs(data.raw["solar-panel"]) do
-		--log("Adjusting solar panel " .. entity.name)
-		entity.production = multWithUnits(entity.production, solarMult)
+	for entityName, entity in pairs(data.raw["solar-panel"]) do
+		if not blacklistIds[entityName] then
+			--log("Adjusting solar panel " .. entity.name)
+			local newProduction = multWithUnits(entity.production, solarMult)
+			if newProduction == nil then
+				log("Warning: solar panel " .. entity.name .. " had 0 or nil production.")
+			else
+				entity.production = newProduction
+			end
+		end
 	end
 end
 
