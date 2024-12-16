@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.2.1
+Date: 16. 12. 2024
+  Features:
+    - Added prototype field for blacklisting entities. (So that my other mod can easily blacklist entities.)
+---------------------------------------------------------------------------------------------------
 Version: 1.2.0
 Date: 15. 12. 2024
   Features:
