@@ -49,6 +49,7 @@ local ENERGY_KEYS = {
 	["constant-combinator"] = {}, -- Still including here for the heat energy.
 	["loader"] = {"energy_per_item"},
 	["loader-1x1"] = {"energy_per_item"},
+
 	["roboport"] = {"energy_usage", "recharge_minimum", "charging_energy"},
 	["logistic-robot"] = {"max_energy", "energy_per_move", "energy_per_tick"},
 	["construction-robot"] = {"max_energy", "energy_per_move", "energy_per_tick"},
@@ -148,7 +149,7 @@ end
 local function adjustAllEnergyFields()
 	-- Adjust all energy usage fields of all applicable entities.
 	for typeName, energyKeys in pairs(ENERGY_KEYS) do
-		for entityName, entity in pairs(data.raw[typeName]) do
+		for entityName, entity in pairs(data.raw[typeName] or {}) do
 			---@diagnostic disable-next-line: undefined-field
 			if not blacklistIds[entityName] and not entity.PowerMultiplier_ignore then
 				--log("Adjusting " .. typeName .. " " .. entity.name)
@@ -158,7 +159,7 @@ local function adjustAllEnergyFields()
 	end
 	-- Adjust electric ammo of turrets.
 	for _, typeName in pairs({"electric-turret", "ammo-turret", "fluid-turret"}) do
-		for entityName, entity in pairs(data.raw[typeName]) do
+		for entityName, entity in pairs(data.raw[typeName] or {}) do
 			---@diagnostic disable-next-line: undefined-field
 			if not blacklistIds[entityName] and not entity.PowerMultiplier_ignore then
 				--log("Adjusting turret ammo: " .. typeName .. " " .. entity.name)
@@ -199,7 +200,7 @@ end
 
 local function adjustAllSolarPanels()
 	if solarMult == nil or solarMult == 1 then return end
-	for entityName, entity in pairs(data.raw["solar-panel"]) do
+	for entityName, entity in pairs(data.raw["solar-panel"] or {}) do
 		---@diagnostic disable-next-line: undefined-field
 		if not blacklistIds[entityName] and not entity.PowerMultiplier_ignore then
 			--log("Adjusting solar panel " .. entity.name)
